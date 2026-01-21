@@ -1,149 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cosmic Music Studio</title>
-<style>
-  html, body {
-    margin:0;
-    padding:0;
-    height:100%;
-    overflow:hidden;
-    font-family: 'Orbitron', sans-serif;
-    background: radial-gradient(circle at center, #000010, #000000);
-    color: #0ff;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MusicMaker Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset and base styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 2rem;
+    }
 
-  canvas {
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    z-index:0;
-  }
+    h1 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: #00ffc6;
+    }
 
-  .controls {
-    position:absolute;
-    bottom:20px;
-    width:100%;
-    display:flex;
-    justify-content:center;
-    z-index:2;
-    gap:10px;
-  }
+    p {
+      font-weight: 300;
+      margin-bottom: 2rem;
+      text-align: center;
+      color: #ccc;
+    }
 
-  button {
-    background:#0ff1;
-    border:2px solid #0ff;
-    color:#0ff;
-    padding:10px 20px;
-    font-size:18px;
-    border-radius:8px;
-    cursor:pointer;
-    backdrop-filter: blur(5px);
-  }
+    .controls {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
 
-  button:hover {
-    background:#0ff4;
-  }
-</style>
+    select {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    select:hover {
+      border-color: #00ffc6;
+    }
+
+    button {
+      background: #00ffc6;
+      color: #0a0a0a;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background: #00e0b0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .note {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 1rem;
+      text-align: center;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .note.active {
+      background: #00ffc6;
+      color: #0a0a0a;
+      transform: scale(1.05);
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.85rem;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
+  <h1>MusicMaker Demo</h1>
+  <p>Start exploring rhythms and notes. Click a note to activate it. Pick a beat and a key to experiment.</p>
 
-<canvas id="visualizer"></canvas>
+  <div class="controls">
+    <select id="tempo">
+      <option value="60">60 BPM</option>
+      <option value="80">80 BPM</option>
+      <option value="100">100 BPM</option>
+      <option value="120">120 BPM</option>
+      <option value="140">140 BPM</option>
+    </select>
 
-<div class="controls">
-  <button id="playTrack">Play Track</button>
-  <button id="record">Record</button>
-  <button id="stop">Stop</button>
-  <a id="downloadLink" style="display:none;">Download</a>
-</div>
+    <select id="key">
+      <option value="C">C Major</option>
+      <option value="D">D Major</option>
+      <option value="E">E Major</option>
+      <option value="F">F Major</option>
+      <option value="G">G Major</option>
+      <option value="A">A Major</option>
+      <option value="B">B Major</option>
+    </select>
 
-<audio id="backingTrack" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+    <button id="playBtn">Play</button>
+  </div>
 
-<script>
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let micStream;
-let recorder;
-let recordedChunks = [];
-let mediaStreamDestination;
+  <div class="grid" id="noteGrid">
+    <div class="note">C</div>
+    <div class="note">D</div>
+    <div class="note">E</div>
+    <div class="note">F</div>
+    <div class="note">G</div>
+    <div class="note">A</div>
+    <div class="note">B</div>
+    <div class="note">C</div>
+  </div>
 
-const track = document.getElementById('backingTrack');
-const playBtn = document.getElementById('playTrack');
-const recordBtn = document.getElementById('record');
-const stopBtn = document.getElementById('stop');
-const downloadLink = document.getElementById('downloadLink');
+  <footer>Minimalist Music Maker • Demo</footer>
 
-// Play backing track
-playBtn.onclick = () => {
-  track.play();
-};
+  <script>
+    const notes = document.querySelectorAll('.note');
 
-// Get mic and start recording
-recordBtn.onclick = async () => {
-  recordedChunks = [];
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  micStream = audioCtx.createMediaStreamSource(stream);
+    notes.forEach(note => {
+      note.addEventListener('click', () => {
+        note.classList.toggle('active');
+      });
+    });
 
-  mediaStreamDestination = audioCtx.createMediaStreamDestination();
-  micStream.connect(mediaStreamDestination);
-
-  recorder = new MediaRecorder(mediaStreamDestination.stream);
-  recorder.ondataavailable = e => recordedChunks.push(e.data);
-  recorder.start();
-  console.log("Recording...");
-};
-
-// Stop recording
-stopBtn.onclick = () => {
-  if(recorder){
-    recorder.stop();
-    recorder.onstop = () => {
-      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      downloadLink.href = url;
-      downloadLink.download = "cosmic_song.webm";
-      downloadLink.style.display = 'inline-block';
-      downloadLink.innerText = "Download Your Recording";
-      console.log("Recording stopped.");
-    };
-  }
-};
-
-// Simple space-themed visualizer
-const canvas = document.getElementById('visualizer');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let stars = [];
-for(let i=0;i<200;i++){
-  stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*1.5+0.5, dx:Math.random()*0.5-0.25, dy:Math.random()*0.5-0.25});
-}
-
-function animate(){
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  
-  ctx.fillStyle = '#0ff';
-  stars.forEach(s => {
-    ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fill();
-    s.x += s.dx;
-    s.y += s.dy;
-    if(s.x>canvas.width) s.x=0;
-    if(s.x<0) s.x=canvas.width;
-    if(s.y>canvas.height) s.y=0;
-    if(s.y<0) s.y=canvas.height;
-  });
-
-  requestAnimationFrame(animate);
-}
-
-animate();
-</script>
+    const playBtn = document.getElementById('playBtn');
+    playBtn.addEventListener('click', () => {
+      alert('This would play your selected notes at the chosen tempo!');
+    });
+  </script>
 </body>
 </html>
