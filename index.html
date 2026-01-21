@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmic Music Studio</title>
+<style>
+  html, body {
+    margin:0;
+    padding:0;
+    height:100%;
+    overflow:hidden;
+    font-family: 'Orbitron', sans-serif;
+    background: radial-gradient(circle at center, #000010, #000000);
+    color: #0ff;
+  }
+
+  canvas {
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+  }
+
+  .controls {
+    position:absolute;
+    bottom:20px;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    z-index:2;
+    gap:10px;
+  }
+
+  button {
+    background:#0ff1;
+    border:2px solid #0ff;
+    color:#0ff;
+    padding:10px 20px;
+    font-size:18px;
+    border-radius:8px;
+    cursor:pointer;
+    backdrop-filter: blur(5px);
+  }
+
+  button:hover {
+    background:#0ff4;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="visualizer"></canvas>
+
+<div class="controls">
+  <button id="playTrack">Play Track</button>
+  <button id="record">Record</button>
+  <button id="stop">Stop</button>
+  <a id="downloadLink" style="display:none;">Download</a>
+</div>
+
+<audio id="backingTrack" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+<script>
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let micStream;
+let recorder;
+let recordedChunks = [];
+let mediaStreamDestination;
+
+const track = document.getElementById('backingTrack');
+const playBtn = document.getElementById('playTrack');
+const recordBtn = document.getElementById('record');
+const stopBtn = document.getElementById('stop');
+const downloadLink = document.getElementById('downloadLink');
+
+// Play backing track
+playBtn.onclick = () => {
+  track.play();
+};
+
+// Get mic and start recording
+recordBtn.onclick = async () => {
+  recordedChunks = [];
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  micStream = audioCtx.createMediaStreamSource(stream);
+
+  mediaStreamDestination = audioCtx.createMediaStreamDestination();
+  micStream.connect(mediaStreamDestination);
+
+  recorder = new MediaRecorder(mediaStreamDestination.stream);
+  recorder.ondataavailable = e => recordedChunks.push(e.data);
+  recorder.start();
+  console.log("Recording...");
+};
+
+// Stop recording
+stopBtn.onclick = () => {
+  if(recorder){
+    recorder.stop();
+    recorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      downloadLink.href = url;
+      downloadLink.download = "cosmic_song.webm";
+      downloadLink.style.display = 'inline-block';
+      downloadLink.innerText = "Download Your Recording";
+      console.log("Recording stopped.");
+    };
+  }
+};
+
+// Simple space-themed visualizer
+const canvas = document.getElementById('visualizer');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let stars = [];
+for(let i=0;i<200;i++){
+  stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*1.5+0.5, dx:Math.random()*0.5-0.25, dy:Math.random()*0.5-0.25});
+}
+
+function animate(){
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  ctx.fillStyle = '#0ff';
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+    s.x += s.dx;
+    s.y += s.dy;
+    if(s.x>canvas.width) s.x=0;
+    if(s.x<0) s.x=canvas.width;
+    if(s.y>canvas.height) s.y=0;
+    if(s.y<0) s.y=canvas.height;
+  });
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
